@@ -3,71 +3,97 @@
 
 #include <db_runtime.hpp>
 
-db_runtime::cfile::error::error(int v) noexcept: value(v)
-{}
-
 db_runtime::cfile::cfile(FILE *p) noexcept: f(p)
 {}
 
-uint_fast8_t db_runtime::cfile::getc() const
+bool db_runtime::cfile::getc(uint_fast8_t *dst) noexcept
 {
     int c;
     c = fgetc(this->f);
     if (c == EOF)
     {
-        throw db_runtime::eof_exception();
+        return true;
     }
     if (ferror(this->f))
     {
-        throw db_runtime::cfile::error(ferror(this->f));
+        this->err = errno;
+        return true;
     }
-    return (uint_fast8_t) c;
+    *dst = (uint_fast8_t) c;
+    return false;
 }
 
-void db_runtime::cfile::putc(uint_fast8_t c) const
+bool db_runtime::cfile::putc(uint_fast8_t c) noexcept
 {
     fputc(c, this->f);
     if (ferror(this->f))
     {
-        throw db_runtime::cfile::error(ferror(this->f));
+        this->err = errno;
+        return true;
     }
+    return false;
 }
 
-void db_runtime::cfile::seek(long offset, int origin) const
+bool db_runtime::cfile::seek(long offset, int origin) noexcept
 {
     if (fseek(this->f, offset, origin) != 0)
     {
-        throw db_runtime::cfile::error(ferror(this->f));
+        this->err = errno;
+        return true;
     }
+    return false;
 }
 
-void db_runtime::cfile::write(const void *data, size_t s) const
+bool db_runtime::cfile::write(const void *data, size_t s) noexcept
 {
     if (fwrite(data, 1, s, this->f) != s)
     {
-        throw db_runtime::cfile::error(ferror(this->f));
+        this->err = errno;
+        return true;
     }
+    return false;
 }
 
-void db_runtime::cfile::read(void *data, size_t s) const
+bool db_runtime::cfile::read(void *data, size_t s) noexcept
 {
     if (fread(data, 1, s, this->f) != s)
     {
-        if (feof(this->f))
+        if (!ferror(this->f))
         {
-            throw db_runtime::eof_exception();
-        }
-        else
-        {
-            throw db_runtime::cfile::error(ferror(this->f));
+            this->err = errno;
+            return true;
         }
     }
+    return false;
 }
 
-void db_runtime::cfile::close() const
+bool db_runtime::cfile::close() noexcept
 {
     if (fclose(this->f) == EOF)
     {
-        throw db_runtime::cfile::error(ferror(this->f));
+        this->err = errno;
+        return true;
     }
+    return false;
+}
+
+bool db_runtime::cfile::eof() const noexcept
+{
+    return feof(this->f);
+}
+
+bool db_runtime::cfile::error() const noexcept
+{
+    return ferror(this->f);
+}
+
+errno_t db_runtime::cfile::get_errno() const noexcept
+{
+    return this->err;
+}
+
+void db_runtime::cfile::clear_err() noexcept
+{
+    this->err = 0;
+    clearerr(this->f);
 }

@@ -24,33 +24,35 @@ namespace db_runtime
     template<class type, std::size_t size, class file_wrapper>
     type parse_uint_le(file_wrapper f);
 
+
     class cfile
     {
+    private:
+        errno_t err = 0;
     public:
-        class error : std::exception
-        {
-        public:
-            const int value;
-
-            explicit error(int) noexcept;
-        };
-
-        FILE *f = nullptr;
+        FILE *const f = nullptr;
 
         explicit cfile(FILE *) noexcept;
 
+        bool getc(uint_fast8_t *dst) noexcept;
 
-        uint_fast8_t getc() const;
+        bool putc(uint_fast8_t) noexcept;
 
-        void putc(uint_fast8_t) const;
+        bool seek(long, int) noexcept;
 
-        void seek(long, int) const;
+        bool write(const void *, size_t) noexcept;
 
-        void write(const void *, size_t) const;
+        bool read(void *, size_t) noexcept;
 
-        void read(void *, size_t) const;
+        bool close() noexcept;
 
-        void close() const;
+        bool eof() const noexcept;
+
+        bool error() const noexcept;
+
+        errno_t get_errno() const noexcept;
+
+        void clear_err() noexcept;
     };
 }
 
