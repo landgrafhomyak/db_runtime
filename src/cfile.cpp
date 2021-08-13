@@ -12,7 +12,7 @@ bool db_runtime::cfile::getc(uint_fast8_t *dst) noexcept
     c = fgetc(this->f);
     if (c == EOF)
     {
-        return true;
+        return false;
     }
     if (ferror(this->f))
     {
