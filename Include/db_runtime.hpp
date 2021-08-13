@@ -1,15 +1,13 @@
 #include <cstdio>
 #include <cstdint>
 
-#include <exception>
-
 #ifndef DB_RUNTIME_HPP
 #define DB_RUNTIME_HPP
 
 namespace db_runtime
 {
     template<class type, std::size_t size, class file_wrapper>
-    static bool dump_uint_be(file_wrapper f, type decoded)
+    bool dump_uint_be(file_wrapper f, type decoded)
     {
         type buffer;
         std::uint8_t *pos = &buffer + size;
@@ -28,7 +26,7 @@ namespace db_runtime
     }
 
     template<class type, std::size_t size, class file_wrapper>
-    static bool dump_uint_le(file_wrapper f, type decoded)
+    bool dump_uint_le(file_wrapper f, type decoded)
     {
         std::size_t S = size;
         while (decoded != 0 && S-- > 0)

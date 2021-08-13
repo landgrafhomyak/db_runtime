@@ -9,7 +9,6 @@ add_library(
         STATIC
 
         src/ints.c
-        src/ints.cpp
         src/cfile.cpp
 )
 target_include_directories(db_runtime PUBLIC Include)
