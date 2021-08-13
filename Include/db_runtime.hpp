@@ -8,21 +8,84 @@
 
 namespace db_runtime
 {
-    class eof_exception : std::exception
+    template<class type, std::size_t size, class file_wrapper>
+    static bool dump_uint_be(file_wrapper f, type decoded)
     {
-    };
+        type buffer;
+        std::uint8_t *pos = &buffer + size;
+        std::size_t S = size;
+
+        while (decoded != 0 && S-- > 0)
+        {
+            *(--pos) = decoded & 0xFF;
+            decoded >>= 8;
+        }
+        while (S-- > 0)
+        {
+            *(--pos) = 0;
+        }
+        return f.write(&buffer, size);
+    }
 
     template<class type, std::size_t size, class file_wrapper>
-    void dump_uint_be(file_wrapper f, type decoded);
+    static bool dump_uint_le(file_wrapper f, type decoded)
+    {
+        std::size_t S = size;
+        while (decoded != 0 && S-- > 0)
+        {
+            if (f.putc(decoded & 0xFF))
+            {
+                return true;
+            }
+            decoded >>= 8;
+        }
+        while (S-- > 0)
+        {
+            if (f.putc(0))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     template<class type, std::size_t size, class file_wrapper>
-    void dump_uint_le(file_wrapper f, type decoded);
+    bool parse_uint_be(file_wrapper f, type *dst)
+    {
+        uint_fast8_t c;
+        std::size_t S = size;
+        *dst = 0;
+
+        while (S-- > 0)
+        {
+            if (f.getc(&c))
+            {
+                return true;
+            }
+            *dst = (*dst << 8) | c;
+        }
+        return false;
+    }
 
     template<class type, std::size_t size, class file_wrapper>
-    type parse_uint_be(file_wrapper f);
+    bool parse_uint_le(file_wrapper f, type *dst)
+    {
+        type buf;
+        std::size_t S = size;
+        uint8_t *pos = &buf + size;
+        *dst = 0;
 
-    template<class type, std::size_t size, class file_wrapper>
-    type parse_uint_le(file_wrapper f);
+        if (f.read(&buf, size))
+        {
+            return true;
+        }
+
+        while (S-- > 0 && --pos >= &buf)
+        {
+            *dst = (*dst << 8) | *pos;
+        }
+        return false;
+    }
 
 
     class cfile
